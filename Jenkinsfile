@@ -1,17 +1,47 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "devops-lab-app"
+        IMAGE_TAG = "v1"
+    }
+
     stages {
-        stage('Build Docker Image') {
+
+        stage('Checkout') {
             steps {
-                sh 'docker build -t devops-lab:v1 .'
+                git url: 'https://github.com/jaabhilash13/devops-lab-app.git', branch: 'main'
             }
         }
 
-        stage('Run Container') {
+        stage('Build Docker Image') {
             steps {
-                sh 'docker run -d -p 5000:5000 devops-lab:v1'
+                script {
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
             }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    // Stop previous container if running
+                    sh "docker rm -f ${IMAGE_NAME} || true"
+                    // Run new container
+                    sh "docker run -d --name ${IMAGE_NAME} -p 5000:5000 ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed!"
         }
     }
 }
+
